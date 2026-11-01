@@ -30,11 +30,17 @@ class HelfeMessenger extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: supabase.auth.currentSession != null
-          ? const HomePage()
-          : const LoginPage(),
+      home: supabase.auth.currentSession == null
+          ? const LoginPage()
+          : const HomePage(),
     );
   }
+}
+
+void showMessage(BuildContext context, String message) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(message)),
+  );
 }
 
 // ================= LOGIN =================
@@ -47,34 +53,35 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
+  final email = TextEditingController();
+  final password = TextEditingController();
   bool loading = false;
 
   Future<void> login() async {
     setState(() => loading = true);
-
     try {
       await supabase.auth.signInWithPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text,
+        email: email.text.trim(),
+        password: password.text,
       );
 
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomePage()),
-        );
-      }
-    } on AuthException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.message)));
-      }
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomePage()),
+      );
+    } catch (e) {
+      if (mounted) showMessage(context, 'Login failed: $e');
     } finally {
       if (mounted) setState(() => loading = false);
     }
+  }
+
+  @override
+  void dispose() {
+    email.dispose();
+    password.dispose();
+    super.dispose();
   }
 
   @override
@@ -85,39 +92,31 @@ class _LoginPageState extends State<LoginPage> {
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              const Icon(Icons.forum, size: 80),
-              const SizedBox(height: 20),
+              const Icon(Icons.forum, size: 76),
+              const SizedBox(height: 18),
               const Text(
                 'HELFE Messenger',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 40),
-
+              const SizedBox(height: 35),
               TextField(
-                controller: emailController,
+                controller: email,
                 keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(
                   labelText: 'Email Address',
                   border: OutlineInputBorder(),
                 ),
               ),
-
               const SizedBox(height: 16),
-
               TextField(
-                controller: passwordController,
+                controller: password,
                 obscureText: true,
                 decoration: const InputDecoration(
                   labelText: 'Password',
                   border: OutlineInputBorder(),
                 ),
               ),
-
               const SizedBox(height: 20),
-
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
@@ -125,16 +124,11 @@ class _LoginPageState extends State<LoginPage> {
                   child: Text(loading ? 'Loading...' : 'LOGIN'),
                 ),
               ),
-
               TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const RegisterPage(),
-                    ),
-                  );
-                },
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const RegisterPage()),
+                ),
                 child: const Text('Create New Account'),
               ),
             ],
@@ -155,84 +149,74 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  final nameController = TextEditingController();
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
+  final name = TextEditingController();
+  final email = TextEditingController();
+  final password = TextEditingController();
   bool loading = false;
 
   Future<void> register() async {
-    setState(() => loading = true);
+    if (name.text.trim().isEmpty ||
+        email.text.trim().isEmpty ||
+        password.text.length < 6) {
+      showMessage(context, 'Enter name, email and password (min 6 characters).');
+      return;
+    }
 
+    setState(() => loading = true);
     try {
       await supabase.auth.signUp(
-        email: emailController.text.trim(),
-        password: passwordController.text,
-        data: {'full_name': nameController.text.trim()},
+        email: email.text.trim(),
+        password: password.text,
+        data: {'full_name': name.text.trim()},
       );
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Account created! Check your email for verification.'),
-          ),
-        );
-        Navigator.pop(context);
-      }
-    } on AuthException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.message)));
-      }
+      if (!mounted) return;
+      showMessage(context, 'Account created. Check your email for verification.');
+      Navigator.pop(context);
+    } catch (e) {
+      if (mounted) showMessage(context, 'Registration failed: $e');
     } finally {
       if (mounted) setState(() => loading = false);
     }
   }
 
   @override
+  void dispose() {
+    name.dispose();
+    email.dispose();
+    password.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Create Account')),
-      body: SingleChildScrollView(
+      body: ListView(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Full Name',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email Address',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: loading ? null : register,
-                child: Text(
-                  loading ? 'Creating...' : 'CREATE ACCOUNT',
-                ),
-              ),
-            ),
-          ],
-        ),
+        children: [
+          TextField(
+            controller: name,
+            decoration: const InputDecoration(labelText: 'Full Name'),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: email,
+            keyboardType: TextInputType.emailAddress,
+            decoration: const InputDecoration(labelText: 'Email Address'),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: password,
+            obscureText: true,
+            decoration: const InputDecoration(labelText: 'Password'),
+          ),
+          const SizedBox(height: 20),
+          FilledButton(
+            onPressed: loading ? null : register,
+            child: Text(loading ? 'Creating...' : 'CREATE ACCOUNT'),
+          ),
+        ],
       ),
     );
   }
@@ -258,21 +242,17 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> loadGroups() async {
-    setState(() => loading = true);
+    if (mounted) setState(() => loading = true);
 
     try {
       final data = await supabase
           .from('groups')
-          .select()
+          .select('id, name, created_by, created_at')
           .order('created_at', ascending: false);
 
       groups = List<Map<String, dynamic>>.from(data);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
-      }
+      if (mounted) showMessage(context, 'Could not load groups: $e');
     }
 
     if (mounted) setState(() => loading = false);
@@ -288,10 +268,7 @@ class _HomePageState extends State<HomePage> {
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'Group Name',
-            border: OutlineInputBorder(),
-          ),
+          decoration: const InputDecoration(labelText: 'Group Name'),
         ),
         actions: [
           TextButton(
@@ -300,26 +277,21 @@ class _HomePageState extends State<HomePage> {
           ),
           FilledButton(
             onPressed: () async {
-              final name = controller.text.trim();
-
-              if (name.isEmpty) return;
+              final groupName = controller.text.trim();
+              if (groupName.isEmpty) return;
 
               try {
                 await supabase.from('groups').insert({
-                  'name': name,
+                  'name': groupName,
                   'created_by': supabase.auth.currentUser!.id,
                 });
 
-                if (mounted) {
-                  Navigator.pop(dialogContext);
-                  await loadGroups();
-                }
+                if (!mounted) return;
+                Navigator.pop(dialogContext);
+                await loadGroups();
+                showMessage(context, 'Group created. You are the Admin.');
               } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: $e')),
-                  );
-                }
+                if (mounted) showMessage(context, 'Create failed: $e');
               }
             },
             child: const Text('Create'),
@@ -327,18 +299,19 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
     );
+
+    controller.dispose();
   }
 
   Future<void> logout() async {
     await supabase.auth.signOut();
+    if (!mounted) return;
 
-    if (mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginPage()),
-        (route) => false,
-      );
-    }
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+      (_) => false,
+    );
   }
 
   @override
@@ -348,12 +321,12 @@ class _HomePageState extends State<HomePage> {
         title: const Text('HELFE Messenger'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
             onPressed: loadGroups,
+            icon: const Icon(Icons.refresh),
           ),
           IconButton(
-            icon: const Icon(Icons.logout),
             onPressed: logout,
+            icon: const Icon(Icons.logout),
           ),
         ],
       ),
@@ -364,13 +337,8 @@ class _HomePageState extends State<HomePage> {
               child: groups.isEmpty
                   ? ListView(
                       children: const [
-                        SizedBox(height: 250),
-                        Center(
-                          child: Text(
-                            'No groups yet\nCreate your first group!',
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
+                        SizedBox(height: 220),
+                        Center(child: Text('No groups yet. Create your first group!')),
                       ],
                     )
                   : ListView.builder(
@@ -385,12 +353,19 @@ class _HomePageState extends State<HomePage> {
                               child: Icon(Icons.groups),
                             ),
                             title: Text(group['name'] ?? 'Unnamed Group'),
-                            subtitle: const Text('Business Group'),
+                            subtitle: Text(
+                              group['created_by'] == supabase.auth.currentUser?.id
+                                  ? 'Created by you'
+                                  : 'Business Group',
+                            ),
                             trailing: const Icon(Icons.chevron_right),
                             onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Chat feature coming next'),
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => GroupDetailsPage(
+                                    group: group,
+                                  ),
                                 ),
                               );
                             },
@@ -404,6 +379,230 @@ class _HomePageState extends State<HomePage> {
         icon: const Icon(Icons.group_add),
         label: const Text('New Group'),
       ),
+    );
+  }
+}
+
+// ================= GROUP DETAILS =================
+
+class GroupDetailsPage extends StatefulWidget {
+  final Map<String, dynamic> group;
+
+  const GroupDetailsPage({super.key, required this.group});
+
+  @override
+  State<GroupDetailsPage> createState() => _GroupDetailsPageState();
+}
+
+class _GroupDetailsPageState extends State<GroupDetailsPage> {
+  List<Map<String, dynamic>> members = [];
+  bool loading = true;
+  bool isAdmin = false;
+
+  String get groupId => widget.group['id'].toString();
+
+  @override
+  void initState() {
+    super.initState();
+    loadMembers();
+  }
+
+  Future<void> loadMembers() async {
+    setState(() => loading = true);
+
+    try {
+      final data = await supabase
+          .from('group_members')
+          .select('user_id, role, joined_at')
+          .eq('group_id', groupId)
+          .order('joined_at');
+
+      members = List<Map<String, dynamic>>.from(data);
+
+      final currentId = supabase.auth.currentUser!.id;
+      isAdmin = members.any(
+        (m) => m['user_id'] == currentId && m['role'] == 'admin',
+      );
+    } catch (e) {
+      if (mounted) showMessage(context, 'Member loading failed: $e');
+    }
+
+    if (mounted) setState(() => loading = false);
+  }
+
+  Future<void> addMember() async {
+    final controller = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Add Group Member'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.emailAddress,
+          decoration: const InputDecoration(
+            labelText: 'Registered Email Address',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final address = controller.text.trim();
+              if (address.isEmpty) return;
+
+              try {
+                final result = await supabase.rpc(
+                  'add_group_member_by_email',
+                  params: {
+                    '_group_id': groupId,
+                    '_email': address,
+                  },
+                );
+
+                if (!mounted) return;
+                Navigator.pop(dialogContext);
+                await loadMembers();
+                showMessage(context, result.toString());
+              } catch (e) {
+                if (mounted) {
+                  showMessage(context, 'Could not add member: $e');
+                }
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+
+    controller.dispose();
+  }
+
+  Future<void> removeMember(String userId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Remove Member?'),
+        content: const Text('This member will be removed from the group.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await supabase
+          .from('group_members')
+          .delete()
+          .eq('group_id', groupId)
+          .eq('user_id', userId);
+
+      await loadMembers();
+      if (mounted) showMessage(context, 'Member removed.');
+    } catch (e) {
+      if (mounted) showMessage(context, 'Remove failed: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.group['name'] ?? 'Group'),
+        actions: [
+          IconButton(
+            onPressed: loadMembers,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.admin_panel_settings),
+                  title: const Text('Group Admin'),
+                  subtitle: Text(
+                    isAdmin ? 'You are the Admin' : 'You are a Member',
+                  ),
+                ),
+                const Divider(),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Members',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      if (isAdmin)
+                        FilledButton.icon(
+                          onPressed: addMember,
+                          icon: const Icon(Icons.person_add),
+                          label: const Text('Add Member'),
+                        ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: members.isEmpty
+                      ? const Center(child: Text('No members found'))
+                      : ListView.builder(
+                          itemCount: members.length,
+                          itemBuilder: (context, index) {
+                            final member = members[index];
+                            final userId = member['user_id'].toString();
+                            final role = member['role'].toString();
+                            final isMe =
+                                userId == supabase.auth.currentUser!.id;
+
+                            return ListTile(
+                              leading: CircleAvatar(
+                                child: Icon(
+                                  role == 'admin'
+                                      ? Icons.admin_panel_settings
+                                      : Icons.person,
+                                ),
+                              ),
+                              title: Text(
+                                isMe ? 'You' : 'Member ${index + 1}',
+                              ),
+                              subtitle: Text(role.toUpperCase()),
+                              trailing: isAdmin &&
+                                      role == 'member'
+                                  ? IconButton(
+                                      icon: const Icon(
+                                        Icons.person_remove,
+                                        color: Colors.redAccent,
+                                      ),
+                                      onPressed: () => removeMember(userId),
+                                    )
+                                  : null,
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
     );
   }
 }
