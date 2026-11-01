@@ -14,7 +14,6 @@ class HelfeMessenger extends StatelessWidget {
       title: 'HELFE Messenger',
       theme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF101820),
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.teal,
           brightness: Brightness.dark,
@@ -34,102 +33,89 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int selectedIndex = 0;
-
-  final List<Map<String, String>> groups = [
-    {'name': 'Business Team', 'message': 'Welcome to HELFE Messenger'},
-    {'name': 'Management', 'message': 'Management group'},
-    {'name': 'Delivery Team', 'message': 'Delivery updates'},
+  final List<String> groups = [
+    'Business Team',
+    'Management',
+    'Delivery Team',
   ];
+
+  void createGroup() {
+    final controller = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Create New Group'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'Enter group name',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final name = controller.text.trim();
+
+              if (name.isNotEmpty) {
+                setState(() => groups.add(name));
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Create'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'HELFE Messenger',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.search),
+        title: const Text('HELFE Messenger'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const Text(
+            'Business Groups',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.account_circle),
+          const SizedBox(height: 16),
+          ...groups.map(
+            (group) => Card(
+              child: ListTile(
+                leading: const CircleAvatar(
+                  child: Icon(Icons.groups),
+                ),
+                title: Text(group),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ChatPage(groupName: group),
+                    ),
+                  );
+                },
+              ),
+            ),
           ),
         ],
       ),
-      body: selectedIndex == 0
-          ? ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                const Text(
-                  'Business Groups',
-                  style: TextStyle(
-                    fontSize: 23,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                ...groups.map(
-                  (group) => Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: ListTile(
-                      leading: const CircleAvatar(
-                        backgroundColor: Colors.teal,
-                        child: Icon(Icons.groups, color: Colors.white),
-                      ),
-                      title: Text(group['name']!),
-                      subtitle: Text(group['message']!),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ChatPage(
-                              groupName: group['name']!,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ],
-            )
-          : const Center(
-              child: Text('Profile'),
-            ),
-      floatingActionButton: selectedIndex == 0
-          ? FloatingActionButton.extended(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Group creation coming soon'),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.add),
-              label: const Text('New Group'),
-            )
-          : null,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: selectedIndex,
-        onDestinationSelected: (index) {
-          setState(() => selectedIndex = index);
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.chat),
-            label: 'Groups',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: createGroup,
+        icon: const Icon(Icons.add),
+        label: const Text('New Group'),
       ),
     );
   }
@@ -145,10 +131,7 @@ class ChatPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(groupName)),
       body: const Center(
-        child: Text(
-          'Welcome to HELFE Group Chat',
-          style: TextStyle(fontSize: 18),
-        ),
+        child: Text('Group Chat'),
       ),
     );
   }
