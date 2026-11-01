@@ -25,8 +25,19 @@ jobs:
         with:
           channel: stable
 
-      - name: Check Flutter
-        run: flutter --version
+      - name: Backup app files
+        run: |
+          mkdir -p /tmp/helfe-backup
+          cp pubspec.yaml /tmp/helfe-backup/pubspec.yaml
+          cp lib/main.dart /tmp/helfe-backup/main.dart
+
+      - name: Generate Android project
+        run: flutter create . --platforms=android --project-name helfe_messenger
+
+      - name: Restore app files
+        run: |
+          cp /tmp/helfe-backup/pubspec.yaml pubspec.yaml
+          cp /tmp/helfe-backup/main.dart lib/main.dart
 
       - name: Install dependencies
         run: flutter pub get
