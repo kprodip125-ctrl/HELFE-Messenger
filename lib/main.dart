@@ -37,6 +37,8 @@ class HelfeMessenger extends StatelessWidget {
   }
 }
 
+// ================= LOGIN =================
+
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -47,7 +49,6 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-
   bool loading = false;
 
   Future<void> login() async {
@@ -67,14 +68,12 @@ class _LoginPageState extends State<LoginPage> {
       }
     } on AuthException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message)));
       }
     } finally {
-      if (mounted) {
-        setState(() => loading = false);
-      }
+      if (mounted) setState(() => loading = false);
     }
   }
 
@@ -86,12 +85,8 @@ class _LoginPageState extends State<LoginPage> {
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              const Icon(
-                Icons.forum,
-                size: 80,
-              ),
+              const Icon(Icons.forum, size: 80),
               const SizedBox(height: 20),
-
               const Text(
                 'HELFE Messenger',
                 style: TextStyle(
@@ -99,7 +94,6 @@ class _LoginPageState extends State<LoginPage> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 40),
 
               TextField(
@@ -122,19 +116,15 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: loading ? null : login,
-                  child: loading
-                      ? const CircularProgressIndicator()
-                      : const Text('LOGIN'),
+                  child: Text(loading ? 'Loading...' : 'LOGIN'),
                 ),
               ),
-
-              const SizedBox(height: 12),
 
               TextButton(
                 onPressed: () {
@@ -155,6 +145,8 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
+// ================= REGISTER =================
+
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
 
@@ -166,7 +158,6 @@ class _RegisterPageState extends State<RegisterPage> {
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-
   bool loading = false;
 
   Future<void> register() async {
@@ -176,41 +167,32 @@ class _RegisterPageState extends State<RegisterPage> {
       await supabase.auth.signUp(
         email: emailController.text.trim(),
         password: passwordController.text,
-        data: {
-          'full_name': nameController.text.trim(),
-        },
+        data: {'full_name': nameController.text.trim()},
       );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-              'Account created! Please check your email for verification.',
-            ),
+            content: Text('Account created! Check your email for verification.'),
           ),
         );
-
         Navigator.pop(context);
       }
     } on AuthException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message)));
       }
     } finally {
-      if (mounted) {
-        setState(() => loading = false);
-      }
+      if (mounted) setState(() => loading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Account'),
-      ),
+      appBar: AppBar(title: const Text('Create Account')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -222,20 +204,15 @@ class _RegisterPageState extends State<RegisterPage> {
                 border: OutlineInputBorder(),
               ),
             ),
-
             const SizedBox(height: 16),
-
             TextField(
               controller: emailController,
-              keyboardType: TextInputType.emailAddress,
               decoration: const InputDecoration(
                 labelText: 'Email Address',
                 border: OutlineInputBorder(),
               ),
             ),
-
             const SizedBox(height: 16),
-
             TextField(
               controller: passwordController,
               obscureText: true,
@@ -244,16 +221,14 @@ class _RegisterPageState extends State<RegisterPage> {
                 border: OutlineInputBorder(),
               ),
             ),
-
-            const SizedBox(height: 24),
-
+            const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
               child: FilledButton(
                 onPressed: loading ? null : register,
-                child: loading
-                    ? const CircularProgressIndicator()
-                    : const Text('CREATE ACCOUNT'),
+                child: Text(
+                  loading ? 'Creating...' : 'CREATE ACCOUNT',
+                ),
               ),
             ),
           ],
@@ -263,13 +238,101 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 }
 
-class HomePage extends StatelessWidget {
+// ================= HOME / GROUPS =================
+
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
-  Future<void> logout(BuildContext context) async {
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  List<Map<String, dynamic>> groups = [];
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    loadGroups();
+  }
+
+  Future<void> loadGroups() async {
+    setState(() => loading = true);
+
+    try {
+      final data = await supabase
+          .from('groups')
+          .select()
+          .order('created_at', ascending: false);
+
+      groups = List<Map<String, dynamic>>.from(data);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    }
+
+    if (mounted) setState(() => loading = false);
+  }
+
+  Future<void> createGroup() async {
+    final controller = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Create New Group'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Group Name',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final name = controller.text.trim();
+
+              if (name.isEmpty) return;
+
+              try {
+                await supabase.from('groups').insert({
+                  'name': name,
+                  'created_by': supabase.auth.currentUser!.id,
+                });
+
+                if (mounted) {
+                  Navigator.pop(dialogContext);
+                  await loadGroups();
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('Create'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> logout() async {
     await supabase.auth.signOut();
 
-    if (context.mounted) {
+    if (mounted) {
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const LoginPage()),
@@ -280,23 +343,66 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = supabase.auth.currentUser;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('HELFE Messenger'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: loadGroups,
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () => logout(context),
+            onPressed: logout,
           ),
         ],
       ),
-      body: Center(
-        child: Text(
-          'Welcome, ${user?.userMetadata?['full_name'] ?? user?.email ?? 'User'}!',
-          style: const TextStyle(fontSize: 20),
-        ),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: loadGroups,
+              child: groups.isEmpty
+                  ? ListView(
+                      children: const [
+                        SizedBox(height: 250),
+                        Center(
+                          child: Text(
+                            'No groups yet\nCreate your first group!',
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(12),
+                      itemCount: groups.length,
+                      itemBuilder: (context, index) {
+                        final group = groups[index];
+
+                        return Card(
+                          child: ListTile(
+                            leading: const CircleAvatar(
+                              child: Icon(Icons.groups),
+                            ),
+                            title: Text(group['name'] ?? 'Unnamed Group'),
+                            subtitle: const Text('Business Group'),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Chat feature coming next'),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
+            ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: createGroup,
+        icon: const Icon(Icons.group_add),
+        label: const Text('New Group'),
       ),
     );
   }
