@@ -7,13 +7,19 @@ Future<void> main() async {
 
   await Supabase.initialize(
     url: 'https://hwjxzrfvgtttghseydhk.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3anh6cmZ2Z3R0dGdoc2V5ZGhrIiwicm9sZSI6IjBhbm9uIiwiaWF0IjoxNzkzNTI2NzQ3LCJleHAiOjIxMDkxMDI3NDd9.aKw20_UsBLH807Qi0G8MfykCmyssxnZOuZOL7pOG16I',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3anh6cmZ2Z3R0dGdoc2V5ZGhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM1MjY3NDcsImV4cCI6MjEwOTEwMjc0N30.aKw20_UsBLH807Qi0G8MfykCmyssxnZOuZOL7pOG16I',
   );
 
   runApp(const HelfeMessenger());
 }
 
 final supabase = Supabase.instance.client;
+
+void msg(BuildContext context, String value) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(value)),
+  );
+}
 
 class HelfeMessenger extends StatelessWidget {
   const HelfeMessenger({super.key});
@@ -38,13 +44,7 @@ class HelfeMessenger extends StatelessWidget {
   }
 }
 
-void showMessage(BuildContext context, String message) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(message)),
-  );
-}
-
-// ================= LOGIN =================
+// LOGIN
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -60,7 +60,6 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> login() async {
     setState(() => loading = true);
-
     try {
       await supabase.auth.signInWithPassword(
         email: email.text.trim(),
@@ -68,13 +67,12 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (!mounted) return;
-
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const HomePage()),
       );
     } catch (e) {
-      if (mounted) showMessage(context, 'Login failed: $e');
+      if (mounted) msg(context, 'Login failed: $e');
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -99,10 +97,7 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 18),
               const Text(
                 'HELFE Messenger',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 35),
               TextField(
@@ -133,9 +128,7 @@ class _LoginPageState extends State<LoginPage> {
               TextButton(
                 onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => const RegisterPage(),
-                  ),
+                  MaterialPageRoute(builder: (_) => const RegisterPage()),
                 ),
                 child: const Text('Create New Account'),
               ),
@@ -147,7 +140,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-// ================= REGISTER =================
+// REGISTER
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -166,15 +159,11 @@ class _RegisterPageState extends State<RegisterPage> {
     if (name.text.trim().isEmpty ||
         email.text.trim().isEmpty ||
         password.text.length < 6) {
-      showMessage(
-        context,
-        'Enter name, email and password (min 6 characters).',
-      );
+      msg(context, 'Enter name, email and password (min 6 characters).');
       return;
     }
 
     setState(() => loading = true);
-
     try {
       await supabase.auth.signUp(
         email: email.text.trim(),
@@ -183,15 +172,10 @@ class _RegisterPageState extends State<RegisterPage> {
       );
 
       if (!mounted) return;
-
-      showMessage(
-        context,
-        'Account created. Check your email for verification.',
-      );
-
+      msg(context, 'Account created. Check your email for verification.');
       Navigator.pop(context);
     } catch (e) {
-      if (mounted) showMessage(context, 'Registration failed: $e');
+      if (mounted) msg(context, 'Registration failed: $e');
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -220,9 +204,7 @@ class _RegisterPageState extends State<RegisterPage> {
           TextField(
             controller: email,
             keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(
-              labelText: 'Email Address',
-            ),
+            decoration: const InputDecoration(labelText: 'Email Address'),
           ),
           const SizedBox(height: 16),
           TextField(
@@ -241,7 +223,7 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 }
 
-// ================= HOME / GROUPS =================
+// HOME / GROUPS
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -262,7 +244,6 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> loadGroups() async {
     if (mounted) setState(() => loading = true);
-
     try {
       final data = await supabase
           .from('groups')
@@ -271,7 +252,7 @@ class _HomePageState extends State<HomePage> {
 
       groups = List<Map<String, dynamic>>.from(data);
     } catch (e) {
-      if (mounted) showMessage(context, 'Could not load groups: $e');
+      if (mounted) msg(context, 'Could not load groups: $e');
     }
 
     if (mounted) setState(() => loading = false);
@@ -306,18 +287,11 @@ class _HomePageState extends State<HomePage> {
                 });
 
                 if (!mounted) return;
-
                 Navigator.pop(dialogContext);
                 await loadGroups();
-
-                showMessage(
-                  context,
-                  'Group created. You are the Admin.',
-                );
+                msg(context, 'Group created. You are the Admin.');
               } catch (e) {
-                if (mounted) {
-                  showMessage(context, 'Create failed: $e');
-                }
+                if (mounted) msg(context, 'Create failed: $e');
               }
             },
             child: const Text('Create'),
@@ -329,9 +303,56 @@ class _HomePageState extends State<HomePage> {
     controller.dispose();
   }
 
+  Future<void> joinWithToken() async {
+    final controller = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Join Group'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Paste Invite Token',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final token = controller.text.trim();
+              if (token.isEmpty) return;
+
+              try {
+                final result = await supabase.rpc(
+                  'request_group_join',
+                  params: {'_token': token},
+                );
+
+                if (!mounted) return;
+                Navigator.pop(dialogContext);
+                msg(context, result.toString());
+                await loadGroups();
+              } catch (e) {
+                if (mounted) {
+                  msg(context, 'Join request failed: $e');
+                }
+              }
+            },
+            child: const Text('Send Request'),
+          ),
+        ],
+      ),
+    );
+
+    controller.dispose();
+  }
+
   Future<void> logout() async {
     await supabase.auth.signOut();
-
     if (!mounted) return;
 
     Navigator.pushAndRemoveUntil(
@@ -364,12 +385,8 @@ class _HomePageState extends State<HomePage> {
               child: groups.isEmpty
                   ? ListView(
                       children: const [
-                        SizedBox(height: 220),
-                        Center(
-                          child: Text(
-                            'No groups yet. Create your first group!',
-                          ),
-                        ),
+                        SizedBox(height: 180),
+                        Center(child: Text('No groups yet. Create your first group!')),
                       ],
                     )
                   : ListView.builder(
@@ -377,18 +394,14 @@ class _HomePageState extends State<HomePage> {
                       itemCount: groups.length,
                       itemBuilder: (context, index) {
                         final group = groups[index];
-
                         return Card(
                           child: ListTile(
                             leading: const CircleAvatar(
                               child: Icon(Icons.groups),
                             ),
-                            title: Text(
-                              group['name'] ?? 'Unnamed Group',
-                            ),
+                            title: Text(group['name'] ?? 'Unnamed Group'),
                             subtitle: Text(
-                              group['created_by'] ==
-                                      supabase.auth.currentUser?.id
+                              group['created_by'] == supabase.auth.currentUser?.id
                                   ? 'Created by you'
                                   : 'Business Group',
                             ),
@@ -397,9 +410,7 @@ class _HomePageState extends State<HomePage> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => GroupDetailsPage(
-                                    group: group,
-                                  ),
+                                  builder: (_) => GroupDetailsPage(group: group),
                                 ),
                               );
                             },
@@ -408,24 +419,35 @@ class _HomePageState extends State<HomePage> {
                       },
                     ),
             ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: createGroup,
-        icon: const Icon(Icons.group_add),
-        label: const Text('New Group'),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FloatingActionButton.extended(
+            heroTag: 'join',
+            onPressed: joinWithToken,
+            icon: const Icon(Icons.link),
+            label: const Text('Join with Invite'),
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton.extended(
+            heroTag: 'create',
+            onPressed: createGroup,
+            icon: const Icon(Icons.group_add),
+            label: const Text('New Group'),
+          ),
+        ],
       ),
     );
   }
 }
 
-// ================= GROUP DETAILS =================
+// GROUP DETAILS
 
 class GroupDetailsPage extends StatefulWidget {
   final Map<String, dynamic> group;
 
-  const GroupDetailsPage({
-    super.key,
-    required this.group,
-  });
+  const GroupDetailsPage({super.key, required this.group});
 
   @override
   State<GroupDetailsPage> createState() => _GroupDetailsPageState();
@@ -433,11 +455,12 @@ class GroupDetailsPage extends StatefulWidget {
 
 class _GroupDetailsPageState extends State<GroupDetailsPage> {
   List<Map<String, dynamic>> members = [];
-  List<Map<String, dynamic>> joinRequests = [];
   List<Map<String, dynamic>> invites = [];
+  List<Map<String, dynamic>> requests = [];
 
   bool loading = true;
   bool isAdmin = false;
+  bool inviteLoading = false;
 
   String get groupId => widget.group['id'].toString();
 
@@ -446,8 +469,6 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
     super.initState();
     loadMembers();
   }
-
-  // ================= LOAD MEMBERS =================
 
   Future<void> loadMembers() async {
     if (mounted) setState(() => loading = true);
@@ -462,166 +483,133 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
       members = List<Map<String, dynamic>>.from(data);
 
       final currentId = supabase.auth.currentUser!.id;
-
       isAdmin = members.any(
-        (m) =>
-            m['user_id'] == currentId &&
-            m['role'] == 'admin',
+        (m) => m['user_id'] == currentId && m['role'] == 'admin',
       );
 
       if (isAdmin) {
         await loadInviteData();
       }
     } catch (e) {
-      if (mounted) {
-        showMessage(context, 'Member loading failed: $e');
-      }
+      if (mounted) msg(context, 'Member loading failed: $e');
     }
 
     if (mounted) setState(() => loading = false);
   }
 
-  // ================= LOAD INVITES =================
-
   Future<void> loadInviteData() async {
     try {
-      final requests = await supabase
+      final inviteData = await supabase
+          .from('group_invites')
+          .select()
+          .eq('group_id', groupId)
+          .order('created_at', ascending: false);
+
+      final requestData = await supabase
           .from('group_join_requests')
-          .select('id, user_id, status, created_at')
+          .select()
           .eq('group_id', groupId)
           .eq('status', 'pending')
           .order('created_at', ascending: false);
 
-      final inviteData = await supabase
-          .from('group_invites')
-          .select(
-            'id, expires_at, max_uses, uses_count, revoked_at',
-          )
-          .eq('group_id', groupId)
-          .order('created_at', ascending: false);
-
-      if (!mounted) return;
-
-      setState(() {
-        joinRequests = List<Map<String, dynamic>>.from(requests);
-        invites = List<Map<String, dynamic>>.from(inviteData);
-      });
+      invites = List<Map<String, dynamic>>.from(inviteData);
+      requests = List<Map<String, dynamic>>.from(requestData);
     } catch (e) {
-      if (mounted) {
-        showMessage(context, 'Invite loading failed: $e');
-      }
+      if (mounted) msg(context, 'Invite data loading failed: $e');
     }
   }
 
-  // ================= CREATE INVITE =================
-
   Future<void> createInvite() async {
     try {
-      final token = await supabase.rpc(
+      setState(() => inviteLoading = true);
+
+      final result = await supabase.rpc(
         'create_group_invite',
         params: {
           '_group_id': groupId,
           '_expires_in_hours': 168,
-          '_max_uses': 20,
+          '_max_uses': null,
         },
       );
 
-      final inviteLink = 'helfe://join?token=$token';
+      final token = result.toString();
 
-      await Clipboard.setData(
-        ClipboardData(text: inviteLink),
+      if (!mounted) return;
+
+      final inviteText = 'HELFE Group Invite Token:\n$token';
+
+      await showDialog(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Invite Created'),
+          content: SelectableText(inviteText),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                await Clipboard.setData(ClipboardData(text: token));
+                if (!dialogContext.mounted) return;
+                Navigator.pop(dialogContext);
+                msg(context, 'Invite token copied.');
+              },
+              child: const Text('COPY TOKEN'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('CLOSE'),
+            ),
+          ],
+        ),
       );
 
       await loadInviteData();
-
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: const Text('Invite Link Created'),
-            content: SelectableText(inviteLink),
-            actions: [
-              TextButton(
-                onPressed: () async {
-                  await Clipboard.setData(
-                    ClipboardData(text: inviteLink),
-                  );
-
-                  if (mounted) {
-                    Navigator.pop(dialogContext);
-                    showMessage(context, 'Invite link copied.');
-                  }
-                },
-                child: const Text('COPY'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('CLOSE'),
-              ),
-            ],
-          ),
-        );
-      }
     } catch (e) {
-      if (mounted) {
-        showMessage(context, 'Invite creation failed: $e');
-      }
+      if (mounted) msg(context, 'Invite creation failed: $e');
+    } finally {
+      if (mounted) setState(() => inviteLoading = false);
     }
   }
 
-  // ================= APPROVE REQUEST =================
-
   Future<void> approveRequest(String requestId) async {
     try {
-      final result = await supabase.rpc(
+      await supabase.rpc(
         'approve_group_join_request',
         params: {'_request_id': requestId},
       );
 
       await loadMembers();
-      await loadInviteData();
-
-      if (mounted) showMessage(context, result.toString());
+      if (mounted) msg(context, 'Join request approved.');
     } catch (e) {
-      if (mounted) showMessage(context, 'Approval failed: $e');
+      if (mounted) msg(context, 'Approval failed: $e');
     }
   }
 
-  // ================= REJECT REQUEST =================
-
   Future<void> rejectRequest(String requestId) async {
     try {
-      final result = await supabase.rpc(
+      await supabase.rpc(
         'reject_group_join_request',
         params: {'_request_id': requestId},
       );
 
-      await loadInviteData();
-
-      if (mounted) showMessage(context, result.toString());
+      await loadMembers();
+      if (mounted) msg(context, 'Join request rejected.');
     } catch (e) {
-      if (mounted) showMessage(context, 'Rejection failed: $e');
+      if (mounted) msg(context, 'Rejection failed: $e');
     }
   }
 
-  // ================= REVOKE INVITE =================
-
   Future<void> revokeInvite(String inviteId) async {
     try {
-      final result = await supabase.rpc(
+      await supabase.rpc(
         'revoke_group_invite',
         params: {'_invite_id': inviteId},
       );
 
-      await loadInviteData();
-
-      if (mounted) showMessage(context, result.toString());
+      await loadMembers();
+      if (mounted) msg(context, 'Invite revoked.');
     } catch (e) {
-      if (mounted) showMessage(context, 'Revoke failed: $e');
+      if (mounted) msg(context, 'Revoke failed: $e');
     }
   }
-
-  // ================= ADD MEMBER =================
 
   Future<void> addMember() async {
     final controller = TextEditingController();
@@ -657,14 +645,12 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                 );
 
                 if (!mounted) return;
-
                 Navigator.pop(dialogContext);
                 await loadMembers();
-
-                showMessage(context, result.toString());
+                msg(context, result.toString());
               } catch (e) {
                 if (mounted) {
-                  showMessage(context, 'Could not add member: $e');
+                  msg(context, 'Could not add member: $e');
                 }
               }
             },
@@ -677,16 +663,12 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
     controller.dispose();
   }
 
-  // ================= REMOVE MEMBER =================
-
   Future<void> removeMember(String userId) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Remove Member?'),
-        content: const Text(
-          'This member will be removed from the group.',
-        ),
+        content: const Text('This member will be removed from the group.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
@@ -710,14 +692,114 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
           .eq('user_id', userId);
 
       await loadMembers();
-
-      if (mounted) showMessage(context, 'Member removed.');
+      if (mounted) msg(context, 'Member removed.');
     } catch (e) {
-      if (mounted) showMessage(context, 'Remove failed: $e');
+      if (mounted) msg(context, 'Remove failed: $e');
     }
   }
 
-  // ================= GROUP UI =================
+  Widget inviteSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Divider(),
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: Text(
+            'INVITE MANAGEMENT',
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: inviteLoading ? null : createInvite,
+              icon: const Icon(Icons.link),
+              label: Text(
+                inviteLoading ? 'Creating...' : 'Create Invite Token',
+              ),
+            ),
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: Text(
+            'Active / Previous Invites',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        if (invites.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Text('No invites created yet.'),
+          ),
+        ...invites.map((invite) {
+          final revoked = invite['revoked_at'] != null;
+          final inviteId = invite['id'].toString();
+
+          return ListTile(
+            leading: Icon(
+              revoked ? Icons.link_off : Icons.link,
+              color: revoked ? Colors.red : Colors.teal,
+            ),
+            title: Text(revoked ? 'Revoked Invite' : 'Invite Token'),
+            subtitle: Text(
+              'Uses: ${invite['uses_count'] ?? 0} / ${invite['max_uses'] ?? 'Unlimited'}\n'
+              'Expires: ${invite['expires_at'] ?? 'Unknown'}',
+            ),
+            trailing: revoked
+                ? const Text('REVOKED')
+                : IconButton(
+                    icon: const Icon(Icons.block, color: Colors.redAccent),
+                    onPressed: () => revokeInvite(inviteId),
+                  ),
+          );
+        }),
+        const Divider(),
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: Text(
+            'PENDING JOIN REQUESTS',
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+          ),
+        ),
+        if (requests.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(16),
+            child: Text('No pending requests.'),
+          ),
+        ...requests.map((request) {
+          final requestId = request['id'].toString();
+          final userId = request['user_id'].toString();
+
+          return Card(
+            child: ListTile(
+              leading: const CircleAvatar(child: Icon(Icons.person)),
+              title: Text('User: ${userId.substring(0, 8)}...'),
+              subtitle: const Text('Waiting for admin approval'),
+              trailing: Wrap(
+                spacing: 0,
+                children: [
+                  IconButton(
+                    tooltip: 'Approve',
+                    icon: const Icon(Icons.check_circle, color: Colors.green),
+                    onPressed: () => approveRequest(requestId),
+                  ),
+                  IconButton(
+                    tooltip: 'Reject',
+                    icon: const Icon(Icons.cancel, color: Colors.red),
+                    onPressed: () => rejectRequest(requestId),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -733,147 +815,48 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
       ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.admin_panel_settings),
-                  title: const Text('Group Admin'),
-                  subtitle: Text(
-                    isAdmin ? 'You are the Admin' : 'You are a Member',
-                  ),
-                ),
-
-                const Divider(),
-
-                // INVITE MANAGEMENT
-                if (isAdmin) ...[
+          : RefreshIndicator(
+              onRefresh: loadMembers,
+              child: ListView(
+                children: [
                   ListTile(
-                    leading: const Icon(Icons.link),
-                    title: const Text('Create Group Invite Link'),
-                    subtitle: const Text(
-                      'Valid for 7 days • Maximum 20 uses',
-                    ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.add_link),
-                      onPressed: createInvite,
+                    leading: const Icon(Icons.admin_panel_settings),
+                    title: const Text('Group Admin'),
+                    subtitle: Text(
+                      isAdmin ? 'You are the Admin' : 'You are a Member',
                     ),
                   ),
-
                   const Divider(),
-
-                  ListTile(
-                    leading: const Icon(Icons.pending_actions),
-                    title: const Text('Pending Join Requests'),
-                    trailing: Text('${joinRequests.length}'),
-                    onTap: loadInviteData,
-                  ),
-
-                  if (joinRequests.isEmpty)
-                    const ListTile(
-                      title: Text('No pending requests'),
-                    ),
-
-                  ...joinRequests.map((request) {
-                    final requestId = request['id'].toString();
-
-                    return ListTile(
-                      leading: const Icon(Icons.person_add_alt_1),
-                      title: Text(
-                        'User ID: ${request['user_id']}',
-                      ),
-                      subtitle: const Text('Waiting for approval'),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.check_circle,
-                              color: Colors.green,
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Members',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
                             ),
-                            onPressed: () => approveRequest(requestId),
                           ),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.cancel,
-                              color: Colors.red,
-                            ),
-                            onPressed: () => rejectRequest(requestId),
+                        ),
+                        if (isAdmin)
+                          FilledButton.icon(
+                            onPressed: addMember,
+                            icon: const Icon(Icons.person_add),
+                            label: const Text('Add Member'),
                           ),
-                        ],
-                      ),
-                    );
-                  }),
-
-                  const Divider(),
-
-                  const ListTile(
-                    leading: Icon(Icons.link),
-                    title: Text('Active Invite Links'),
+                      ],
+                    ),
                   ),
-
-                  ...invites.where(
-                    (invite) => invite['revoked_at'] == null,
-                  ).map((invite) {
-                    return ListTile(
-                      leading: const Icon(Icons.link),
-                      title: const Text('Active Invite'),
-                      subtitle: Text(
-                        'Uses: ${invite['uses_count']}/${invite['max_uses']}'
-                        '\nExpires: ${invite['expires_at']}',
-                      ),
-                      isThreeLine: true,
-                      trailing: IconButton(
-                        icon: const Icon(
-                          Icons.link_off,
-                          color: Colors.red,
-                        ),
-                        tooltip: 'Revoke invite',
-                        onPressed: () => revokeInvite(
-                          invite['id'].toString(),
-                        ),
-                      ),
-                    );
-                  }),
-
-                  const Divider(),
-                ],
-
-                // MEMBERS
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Members',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      if (isAdmin)
-                        FilledButton.icon(
-                          onPressed: addMember,
-                          icon: const Icon(Icons.person_add),
-                          label: const Text('Add Member'),
-                        ),
-                    ],
-                  ),
-                ),
-
-                if (members.isEmpty)
-                  const Center(child: Text('No members found'))
-                else
+                  if (members.isEmpty)
+                    const Center(child: Text('No members found')),
                   ...members.asMap().entries.map((entry) {
                     final index = entry.key;
                     final member = entry.value;
-
                     final userId = member['user_id'].toString();
                     final role = member['role'].toString();
-
-                    final isMe =
-                        userId == supabase.auth.currentUser!.id;
+                    final isMe = userId == supabase.auth.currentUser!.id;
 
                     return ListTile(
                       leading: CircleAvatar(
@@ -883,9 +866,7 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                               : Icons.person,
                         ),
                       ),
-                      title: Text(
-                        isMe ? 'You' : 'Member ${index + 1}',
-                      ),
+                      title: Text(isMe ? 'You' : 'Member ${index + 1}'),
                       subtitle: Text(role.toUpperCase()),
                       trailing: isAdmin && role == 'member'
                           ? IconButton(
@@ -898,7 +879,10 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                           : null,
                     );
                   }),
-              ],
+                  if (isAdmin) inviteSection(),
+                  const SizedBox(height: 30),
+                ],
+              ),
             ),
     );
   }
