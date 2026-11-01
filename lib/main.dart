@@ -7,7 +7,7 @@ Future<void> main() async {
 
   await Supabase.initialize(
     url: 'https://hwjxzrfvgtttghseydhk.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3anh6cmZ2Z3R0dGdoc2V5ZGhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM1MjY3NDcsImV4cCI6MjEwOTEwMjc0N30.aKw20_UsBLH807Qi0G8MfykCmyssxnZOuZOL7pOG16I',
+    anonKey: 'sb_publishable_gt-ihTb2LAiw8uKv67F9hQ_VrePKGbNwMjc0N30.aKw20_UsBLH807Qi0G8MfykCmyssxnZOuZOL7pOG16I',
   );
 
   runApp(const HelfeMessenger());
